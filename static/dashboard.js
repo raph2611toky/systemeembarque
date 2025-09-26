@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const onevent = socket.onevent;
   socket.onevent = function (packet) {
     const args = packet.data || [];
-    console.log("📡 Événement reçu:", args[0], "→", args.slice(1));
+    // console.log("📡 Événement reçu:", args[0], "→", args.slice(1));
     onevent.call(this, packet);
   };
 
@@ -29,6 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const fanVisual = document.getElementById("fan-visual");
   const ledStatus = document.getElementById("led-status");
   const ledIndicator = document.getElementById("led-indicator");
+  const ledThresholdInput = document.getElementById("led-threshold");
+  const fanThresholdInput = document.getElementById("fan-threshold");
+  const setThresholdsButton = document.getElementById("set-thresholds");
 
   // Connexion
   socket.on("connect", () => {
@@ -55,13 +58,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Log reconnect attempts
   socket.on('reconnect_attempt', (attempt) => {
-    console.log(`🔄 Reconnect attempt #${attempt}`);
+    // console.log(`🔄 Reconnect attempt #${attempt}`);
   });
 
   // Reconnect on tab focus to handle background throttling
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && !socket.connected) {
-      console.log("🔄 Tab visible, attempting reconnect...");
+      // console.log("🔄 Tab visible, attempting reconnect...");
       socket.connect();
     }
   });
@@ -69,12 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Polling: skip if tab is hidden to reduce load
   const intervalId = setInterval(() => {
     if (document.hidden) {
-      console.log("⏰ Polling skipped (tab hidden)");
+      // console.log("⏰ Polling skipped (tab hidden)");
       return;
     }
-    console.log("⏰ Polling tick at", new Date().toISOString(), "| Connected:", socket.connected);
+    // console.log("⏰ Polling tick at", new Date().toISOString(), "| Connected:", socket.connected);
     if (socket.connected) {
-      console.log("📤 Sending get_state...");
+      // console.log("📤 Sending get_state...");
       socket.emit("get_state");
     } else {
       console.log("🚫 Socket déconnecté, skip get_state. Reason from last disconnect?", socket.io.engine.closeReason || 'unknown');
@@ -84,8 +87,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // state_update: logs détaillés + try/catch pour éviter crash
   socket.on("state_update", (data) => {
     try {
-      console.log("🔄 state_update reçu:", data, "at", new Date().toISOString());
-      console.log("🔍 Capteurs:", { temp: data.temperature, hum: data.humidity, pres: data.pressure });
+      // console.log("🔄 state_update reçu:", data, "at", new Date().toISOString());
+      // console.log("🔍 Capteurs:", { temp: data.temperature, hum: data.humidity, pres: data.pressure });
 
       // Température
       if (data.temperature !== null && data.temperature !== undefined) {
@@ -148,12 +151,52 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      console.log("✅ state_update appliqué sans erreur");
+      // console.log("✅ state_update appliqué sans erreur");
     } catch (err) {
       console.error("💥 Erreur dans state_update:", err, "Data:", data);
     }
   });
 
-  // Cleanup interval sur unload
+  // Dynamic threshold update
+  setThresholdsButton.addEventListener("click", () => {
+    const ledThreshold = parseFloat(ledThresholdInput.value);
+    const fanThreshold = parseFloat(fanThresholdInput.value);
+    console.log("Click button set threshods...")
+
+    if (isNaN(ledThreshold) || isNaN(fanThreshold)) {
+      console.error("❌ Invalid threshold values:", { ledThreshold, fanThreshold });
+      // alert("Veuillez entrer des valeurs numériques valides pour les seuils.");
+      return;
+    }
+
+    const data = {
+      temperature_led: ledThreshold,
+      temperature_fan: fanThreshold
+    };
+
+    fetch("/api/set_threshold", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(result => {
+        console.log("✅ Thresholds updated successfully:", result.thresholds);
+        // alert("Seuils mis à jour avec succès !");
+        socket.emit("get_state");
+      })
+      .catch(error => {
+        console.error("❌ Error updating thresholds:", error);
+        alert("Erreur lors de la mise à jour des seuils : " + error.message);
+      });
+  });
+
   window.addEventListener('beforeunload', () => clearInterval(intervalId));
 });
