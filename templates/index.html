@@ -38,7 +38,7 @@
 
       <!-- Pression -->
       <div class="sensor-card">
-        <h2>🌬️ Pression</h2>
+        <h2>🌪️ Pression</h2>
         <div class="gauge-container">
           <div class="gauge" id="pressure-gauge">
             <div class="gauge-needle" id="pressure-needle"></div>
@@ -53,7 +53,7 @@
     <div class="sensors-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 30px;">
       <!-- Ventilateur -->
       <div class="sensor-card">
-        <h2>🌀 Ventilateur</h2>
+        <h2>🌪 Ventilateur</h2>
         <div class="fan-container">
           <div class="fan" id="fan-visual">
             <div class="fan-blade"></div>
@@ -78,10 +78,10 @@
 
     <!-- Seuils -->
     <div class="thresholds" style="margin-top: 30px;">
-      <h3>⚙️ Seuils de température</h3>
+      <h3>⚡ Seuils de température</h3>
       <div class="threshold-inputs">
-        <label>LED (°C): <input type="number" id="led-threshold" value="30"></label>
-        <label>Ventilateur (°C): <input type="number" id="fan-threshold" value="28"></label>
+        <label>LED (°C): <input type="number" id="led-threshold" value="{{ thresholds.temperature_led }}"></label>
+        <label>Ventilateur (°C): <input type="number" id="fan-threshold" value="{{ thresholds.temperature_fan }}"></label>
         <button id="set-thresholds">Mettre à jour</button>
       </div>
     </div>
