@@ -1,10 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
-
   const socket = io({
-    transports: ["websocket"],
-    reconnection: true,  // Nouveau : auto-reconnexion
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000
+    transports: ["websocket", "polling"],  // Fallback to polling if WebSocket fails
+    reconnection: true,
+    reconnectionAttempts: Infinity,  // Unlimited reconnection attempts
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000
   });
 
   // Logger événements
@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     onevent.call(this, packet);
   };
 
-  // Éléments DOM (inchangé)
+  // Éléments DOM
   const tempValue = document.getElementById("temp-value");
   const statusText = document.getElementById("status-text");
   const connectionStatus = document.getElementById("connection-status");
@@ -40,22 +40,39 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   socket.on("connect_error", (error) => {
-    console.error("❌ SocketIO connect_error:", error);  // Log détaillé
+    console.error("❌ SocketIO connect_error:", error);
     statusText.textContent = "Erreur connexion";
     connectionStatus.classList.remove("connected");
     connectionStatus.classList.add("disconnected");
   });
 
   socket.on("disconnect", (reason) => {
-    console.error("🔌 SocketIO disconnected. Reason:", reason);  // Log raison (ex: 'ping timeout')
+    console.error("🔌 SocketIO disconnected. Reason:", reason);
     statusText.textContent = "Déconnecté";
     connectionStatus.classList.remove("connected");
     connectionStatus.classList.add("disconnected");
   });
 
-  // Polling : log TOUJOURS, même si !connected
+  // Log reconnect attempts
+  socket.on('reconnect_attempt', (attempt) => {
+    console.log(`🔄 Reconnect attempt #${attempt}`);
+  });
+
+  // Reconnect on tab focus to handle background throttling
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !socket.connected) {
+      console.log("🔄 Tab visible, attempting reconnect...");
+      socket.connect();
+    }
+  });
+
+  // Polling: skip if tab is hidden to reduce load
   const intervalId = setInterval(() => {
-    console.log("⏰ Polling tick at", new Date().toISOString(), "| Connected:", socket.connected);  // Log systématique
+    if (document.hidden) {
+      console.log("⏰ Polling skipped (tab hidden)");
+      return;
+    }
+    console.log("⏰ Polling tick at", new Date().toISOString(), "| Connected:", socket.connected);
     if (socket.connected) {
       console.log("📤 Sending get_state...");
       socket.emit("get_state");
@@ -64,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, 1000);
 
-  // state_update : logs détaillés + try/catch pour éviter crash
+  // state_update: logs détaillés + try/catch pour éviter crash
   socket.on("state_update", (data) => {
     try {
       console.log("🔄 state_update reçu:", data, "at", new Date().toISOString());
@@ -81,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Humidité (similaire, avec check NaN)
+      // Humidité
       if (data.humidity !== null && data.humidity !== undefined) {
         const hum = parseFloat(data.humidity);
         if (isNaN(hum)) console.warn("⚠️ Hum non-numérique:", data.humidity);
@@ -92,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Pression (similaire)
+      // Pression
       if (data.pressure !== null && data.pressure !== undefined) {
         const pres = parseFloat(data.pressure);
         if (isNaN(pres)) console.warn("⚠️ Pres non-numérique:", data.pressure);
@@ -104,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Fan (similaire)
+      // Fan
       if (data.fan) {
         const speed = parseInt(data.fan.speed);
         if (isNaN(speed)) console.warn("⚠️ Fan speed non-numérique:", data.fan.speed);
@@ -137,6 +154,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Cleanup interval sur unload (optionnel)
+  // Cleanup interval sur unload
   window.addEventListener('beforeunload', () => clearInterval(intervalId));
 });

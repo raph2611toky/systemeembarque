@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()  # Make telnetlib non-blocking for eventlet
+
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO, emit
 from threading import Lock
@@ -9,7 +12,7 @@ from utils.pont import load_state  # Assumé : lit state.json
 app = Flask(__name__, template_folder="templates")
 app.config['SECRET_KEY'] = 'change_this_secret'
 socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True,
-                    ping_timeout=60, ping_interval=30)
+                    ping_timeout=20, ping_interval=10)  # Reduced for faster detection
 # thread_lock = Lock()
 
 STATE_FILE = r"C:\RenodeProjects\RpiLike\state.json"
@@ -55,7 +58,7 @@ def save_state_with_thresholds():
 
 def renode_command(command):
     try:
-        with telnetlib.Telnet("localhost", 4321, timeout=5) as tn:
+        with telnetlib.Telnet("localhost", 1234, timeout=5) as tn:  # Default Renode port
             tn.read_until(b"(raspberrypi3) ", timeout=5)
             tn.write((command + "\n").encode('ascii'))
             output = tn.read_until(b"(raspberrypi3) ", timeout=5).decode('ascii')
@@ -117,11 +120,11 @@ def handle_get_state():
             temp = float(temp)
             led_on = temp >= thresholds["temperature_led"]
             state["led"]["value"] = led_on
-            renode_command(f'sysbus.gpio0.extraLed {"Set" if led_on else "Reset"}')
+            renode_command(f'sysbus.gpio0 Write 17 {"true" if led_on else "false"}')
 
             fan_speed = 100 if temp >= thresholds["temperature_fan"] else 0
             state["fan"]["speed"] = fan_speed
-            renode_command(f'sysbus.gpio0.fan0 {"Set" if fan_speed > 0 else "Reset"}')
+            renode_command(f'sysbus.gpio0 Write 11 {"true" if fan_speed > 0 else "false"}')
 
         state["fan_status"] = "En marche" if int(float(state["fan"]["speed"])) > 0 else "Arrêté"
         save_state_with_thresholds()
@@ -132,4 +135,4 @@ def handle_get_state():
 
 if __name__ == '__main__':
     load_thresholds()
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)  # Enable debug for more logs
