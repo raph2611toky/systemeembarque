@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard Capteurs - Temps Réel</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="dashboard">
+    <h1>🌌 Tableau de Bord Capteurs</h1>
+
+    <!-- Ligne du haut -->
+    <div class="sensors-grid">
+      <!-- Température -->
+      <div class="sensor-card">
+        <h2>🌡️ Température</h2>
+        <div class="thermometer-container">
+          <div class="thermometer-tube">
+            <div class="thermometer-mercury" id="mercury"></div>
+          </div>
+          <div class="thermometer-bulb"></div>
+        </div>
+        <div class="value-display"><span id="temp-value">{{ state.temperature|default('--') }}</span> °C</div>
+      </div>
+
+      <!-- Humidité -->
+      <div class="sensor-card">
+        <h2>💧 Humidité</h2>
+        <div class="gauge-container">
+          <div class="gauge" id="humidity-gauge">
+            <div class="gauge-needle" id="humidity-needle"></div>
+            <div class="gauge-center"></div>
+          </div>
+        </div>
+        <div class="value-display"><span id="hum-value">{{ state.humidity|default('--') }}</span> %</div>
+      </div>
+
+      <!-- Pression -->
+      <div class="sensor-card">
+        <h2>🌬️ Pression</h2>
+        <div class="gauge-container">
+          <div class="gauge" id="pressure-gauge">
+            <div class="gauge-needle" id="pressure-needle"></div>
+            <div class="gauge-center"></div>
+          </div>
+        </div>
+        <div class="value-display"><span id="pres-value">{{ state.pressure|default('--') }}</span> hPa</div>
+      </div>
+    </div>
+
+    <!-- Ligne du bas -->
+    <div class="sensors-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 30px;">
+      <!-- Ventilateur -->
+      <div class="sensor-card">
+        <h2>🌀 Ventilateur</h2>
+        <div class="fan-container">
+          <div class="fan" id="fan-visual">
+            <div class="fan-blade"></div>
+            <div class="fan-blade"></div>
+            <div class="fan-blade"></div>
+            <div class="fan-center"></div>
+          </div>
+        </div>
+        <div class="value-display">Vitesse: <span id="fan-value">{{ state.fan.speed|default('0') }}</span>%</div>
+        <div class="status-display">État: <span id="fan-status">{{ state.fan_status|default('Arrêté') }}</span></div>
+      </div>
+
+      <!-- LED -->
+      <div class="sensor-card">
+        <h2>💡 LED</h2>
+        <div class="led-container">
+          <div class="led-indicator" id="led-indicator"></div>
+        </div>
+        <div class="value-display"><span id="led-status">{{ 'ON' if state.led.value else 'OFF' }}</span></div>
+      </div>
+    </div>
+
+    <!-- Seuils -->
+    <div class="thresholds" style="margin-top: 30px;">
+      <h3>⚙️ Seuils de température</h3>
+      <div class="threshold-inputs">
+        <label>LED (°C): <input type="number" id="led-threshold" value="30"></label>
+        <label>Ventilateur (°C): <input type="number" id="fan-threshold" value="28"></label>
+        <button id="set-thresholds">Mettre à jour</button>
+      </div>
+    </div>
+
+    <!-- Connexion -->
+    <div class="connection-status" id="connection-status">
+      Connexion: <span id="status-text">Déconnecté</span>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

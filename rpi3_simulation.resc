@@ -1,0 +1,26 @@
+using sysbus
+
+# Créer la machine Raspberry Pi 3
+mach create "rpi3"
+machine LoadPlatformDescription @platforms/boards/rpi3.repl
+
+# Charger le kernel et le device tree avec le chemin précis
+sysbus LoadELF @"C:/Users/raph/Documents/Documents/PROJET/SYS EMBARQUE/CONFIG/outputs/images/zImage"
+sysbus LoadDTB @"C:/Users/raph/Documents/Documents/PROJET/SYS EMBARQUE/CONFIG/outputs/images/bcm2710-rpi-3-b.dtb"
+
+# Créer et charger le root filesystem
+emulation CreateDisk "rootfs" 1024M @"C:/Users/raph/Documents/Documents/PROJET/SYS EMBARQUE/CONFIG/outputs/images/rootfs.ext4"
+sysbus RootFS "rootfs"
+
+# Arguments du kernel
+sysbus SetKernelArgs "console=ttyAMA0 root=/dev/mmcblk0 rw"
+
+# Définir les GPIOs virtuels pour LED et ventilateur
+gpio LED GPIO17
+gpio FAN GPIO18
+
+# Définir le capteur de température simulé
+sensor TEMP DS18B20
+
+# Démarrer la simulation
+start
