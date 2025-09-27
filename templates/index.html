@@ -7,15 +7,17 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <!-- Navigation Bar -->
+   Navigation Bar 
   <nav class="nav-bar">
     <button id="home-nav" class="nav-button active">🏠 Home</button>
     <button id="terminal-nav" class="nav-button">📟 Terminal</button>
   </nav>
 
-  <!-- Main Content -->
+   Toast Container 
+  <div id="toast-container" class="toast-container"></div>
+
+   Main Content 
   <div class="dashboard">
-    <!-- Thresholds -->
     <div class="thresholds">
       <h3>⚡ Seuils de température</h3>
       <div class="threshold-inputs">
@@ -25,49 +27,97 @@
       </div>
     </div>
 
-    <!-- Sensors (Single Row: Temperature, Fan, LED) -->
+     Sensors (Single Row: Temperature, Fan, LED) 
     <div class="sensors-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div class="sensor-card">
         <h2>🌡️ Température</h2>
+         Made thermometer much taller to fill card space 
         <div class="thermometer-container">
+          <div class="thermometer-scale">
+            <div class="scale-mark" style="top: 5%;">100°C</div>
+            <div class="scale-mark" style="top: 20%;">80°C</div>
+            <div class="scale-mark" style="top: 35%;">60°C</div>
+            <div class="scale-mark" style="top: 50%;">40°C</div>
+            <div class="scale-mark" style="top: 65%;">20°C</div>
+            <div class="scale-mark" style="top: 80%;">0°C</div>
+            <div class="scale-mark" style="top: 95%;">-20°C</div>
+          </div>
           <div class="thermometer-tube">
             <div class="thermometer-mercury" id="mercury"></div>
+            <div class="thermometer-graduations">
+              <div class="graduation" style="top: 5%;"></div>
+              <div class="graduation" style="top: 20%;"></div>
+              <div class="graduation" style="top: 35%;"></div>
+              <div class="graduation" style="top: 50%;"></div>
+              <div class="graduation" style="top: 65%;"></div>
+              <div class="graduation" style="top: 80%;"></div>
+              <div class="graduation" style="top: 95%;"></div>
+            </div>
           </div>
-          <div class="thermometer-bulb"></div>
+          <div class="thermometer-bulb">
+            <div class="thermometer-bulb-inner"></div>
+          </div>
         </div>
         <div class="value-display"><span id="temp-value">{{ state.temperature|default('--') }}</span> °C</div>
       </div>
 
       <div class="sensor-card">
         <h2>🌪 Ventilateur</h2>
+         Added large demonstrative status displays for fan 
         <div class="fan-container">
-          <div class="fan" id="fan-visual">
-            <div class="fan-blade"></div>
-            <div class="fan-blade"></div>
-            <div class="fan-blade"></div>
-            <div class="fan-center"></div>
+          <div class="fan-housing">
+            <div class="fan" id="fan-visual">
+              <div class="fan-blade"></div>
+              <div class="fan-blade"></div>
+              <div class="fan-blade"></div>
+              <div class="fan-blade"></div>
+              <div class="fan-center">
+                <div class="fan-center-screw"></div>
+              </div>
+            </div>
+            <div class="fan-grill">
+              <div class="grill-ring" style="width: 140px; height: 140px;"></div>
+              <div class="grill-ring" style="width: 120px; height: 120px;"></div>
+              <div class="grill-ring" style="width: 100px; height: 100px;"></div>
+              <div class="grill-ring" style="width: 80px; height: 80px;"></div>
+            </div>
           </div>
         </div>
-        <div class="value-display">Vitesse: <span id="fan-value">{{ state.fan.speed|default('0') }}</span>%</div>
-        <div class="status-display">État: <span id="fan-status">{{ state.fan_status|default('Arrêté') }}</span></div>
+        <div class="fan-speed-display">
+          <span id="fan-value">{{ state.fan.speed|default('0') }}</span>%
+        </div>
+        <div class="fan-status-display" id="fan-status-display">
+          <span id="fan-status">{{ state.fan_status|default('ARRÊTÉ') }}</span>
+        </div>
       </div>
 
       <div class="sensor-card">
         <h2>💡 LED</h2>
+         Added large demonstrative status display for LED 
         <div class="led-container">
-          <div class="led-indicator" id="led-indicator"></div>
+          <div class="led-housing">
+            <div class="led-indicator" id="led-indicator">
+              <div class="led-core"></div>
+              <div class="led-glow"></div>
+            </div>
+            <div class="led-base">
+              <div class="led-pin led-pin-1"></div>
+              <div class="led-pin led-pin-2"></div>
+            </div>
+          </div>
         </div>
-        <div class="value-display"><span id="led-status">{{ 'ON' if state.led.value else 'OFF' }}</span></div>
+        <div class="led-status-display" id="led-status-display">
+          <span id="led-status">{{ 'ALLUMÉE' if state.led.value else 'ÉTEINTE' }}</span>
+        </div>
       </div>
     </div>
 
-    <!-- Connection Status -->
     <div class="connection-status" id="connection-status">
       Connexion: <span id="status-text">Déconnecté</span>
     </div>
   </div>
 
-  <!-- Scripts -->
+   Scripts 
   <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 </body>
 </html>
