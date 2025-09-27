@@ -7,12 +7,26 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="dashboard">
-    <h1>🌌 Tableau de Bord Capteurs</h1>
+  <!-- Navigation Bar -->
+  <nav class="nav-bar">
+    <button id="home-nav" class="nav-button active">🏠 Home</button>
+    <button id="terminal-nav" class="nav-button">📟 Terminal</button>
+  </nav>
 
-    <!-- Ligne du haut -->
-    <div class="sensors-grid">
-      <!-- Température -->
+  <!-- Main Content -->
+  <div class="dashboard">
+    <!-- Thresholds -->
+    <div class="thresholds">
+      <h3>⚡ Seuils de température</h3>
+      <div class="threshold-inputs">
+        <label>LED (°C): <input type="number" id="led-threshold" value="{{ thresholds.temperature_led }}"></label>
+        <label>Ventilateur (°C): <input type="number" id="fan-threshold" value="{{ thresholds.temperature_fan }}"></label>
+        <button id="set-thresholds">Mettre à jour</button>
+      </div>
+    </div>
+
+    <!-- Sensors (Single Row: Temperature, Fan, LED) -->
+    <div class="sensors-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div class="sensor-card">
         <h2>🌡️ Température</h2>
         <div class="thermometer-container">
@@ -24,34 +38,6 @@
         <div class="value-display"><span id="temp-value">{{ state.temperature|default('--') }}</span> °C</div>
       </div>
 
-      <!-- Humidité -->
-      <div class="sensor-card">
-        <h2>💧 Humidité</h2>
-        <div class="gauge-container">
-          <div class="gauge" id="humidity-gauge">
-            <div class="gauge-needle" id="humidity-needle"></div>
-            <div class="gauge-center"></div>
-          </div>
-        </div>
-        <div class="value-display"><span id="hum-value">{{ state.humidity|default('--') }}</span> %</div>
-      </div>
-
-      <!-- Pression -->
-      <div class="sensor-card">
-        <h2>🌪️ Pression</h2>
-        <div class="gauge-container">
-          <div class="gauge" id="pressure-gauge">
-            <div class="gauge-needle" id="pressure-needle"></div>
-            <div class="gauge-center"></div>
-          </div>
-        </div>
-        <div class="value-display"><span id="pres-value">{{ state.pressure|default('--') }}</span> hPa</div>
-      </div>
-    </div>
-
-    <!-- Ligne du bas -->
-    <div class="sensors-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 30px;">
-      <!-- Ventilateur -->
       <div class="sensor-card">
         <h2>🌪 Ventilateur</h2>
         <div class="fan-container">
@@ -66,7 +52,6 @@
         <div class="status-display">État: <span id="fan-status">{{ state.fan_status|default('Arrêté') }}</span></div>
       </div>
 
-      <!-- LED -->
       <div class="sensor-card">
         <h2>💡 LED</h2>
         <div class="led-container">
@@ -76,17 +61,7 @@
       </div>
     </div>
 
-    <!-- Seuils -->
-    <div class="thresholds" style="margin-top: 30px;">
-      <h3>⚡ Seuils de température</h3>
-      <div class="threshold-inputs">
-        <label>LED (°C): <input type="number" id="led-threshold" value="{{ thresholds.temperature_led }}"></label>
-        <label>Ventilateur (°C): <input type="number" id="fan-threshold" value="{{ thresholds.temperature_fan }}"></label>
-        <button id="set-thresholds">Mettre à jour</button>
-      </div>
-    </div>
-
-    <!-- Connexion -->
+    <!-- Connection Status -->
     <div class="connection-status" id="connection-status">
       Connexion: <span id="status-text">Déconnecté</span>
     </div>

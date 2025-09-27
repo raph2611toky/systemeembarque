@@ -12,7 +12,7 @@ from utils.pont import load_state  # Assumé : lit state.json
 app = Flask(__name__, template_folder="templates")
 app.config['SECRET_KEY'] = 'change_this_secret'
 socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True,
-                    ping_timeout=20, ping_interval=10)  # Reduced for faster detection
+                    ping_timeout=20, ping_interval=10)
 # thread_lock = Lock()
 
 STATE_FILE = r"C:\RenodeProjects\RpiLike\state.json"
@@ -20,8 +20,6 @@ STATE_FILE = r"C:\RenodeProjects\RpiLike\state.json"
 # État central
 state = {
     "temperature": None,
-    "humidity": None,
-    "pressure": None,
     "led": {"id": "extraLed", "value": False},
     "fan": {"id": "fan0", "speed": 0}
 }
@@ -52,21 +50,44 @@ def save_state_with_thresholds():
     try:
         with open(STATE_FILE, 'w') as f:
             json.dump(full_state, f)
-        # print(f"💾 State saved to JSON: {full_state}")  # Log nouveau
+        # print(f"💾 State saved to JSON: {full_state}")
     except Exception as e:
         print(f"❌ Error saving state: {e}")
 
 def renode_command(command):
     try:
-        with telnetlib.Telnet("localhost", 1234, timeout=5) as tn:  # Default Renode port
+        with telnetlib.Telnet("localhost", 4321, timeout=5) as tn:  # Use port 4321
             tn.read_until(b"(raspberrypi3) ", timeout=5)
             tn.write((command + "\n").encode('ascii'))
             output = tn.read_until(b"(raspberrypi3) ", timeout=5).decode('ascii')
             print(f"🔌 Renode '{command}' → {output.strip()}")
             return output
+    except ConnectionRefusedError as e:
+        print(f"❌ Telnet connection refused: {e}. Is Renode running on port 4321?")
+        return None
     except Exception as e:
         print(f"❌ Telnet error: {e}")
         return None
+
+def renode_terminal_command(command):
+    try:
+        with telnetlib.Telnet("localhost", 4321, timeout=5) as tn:  # Use port 4321
+            # Read initial prompt
+            initial = tn.read_until(b"(raspberrypi3) ", timeout=5).decode('ascii')
+            # Send command
+            tn.write((command + "\n").encode('ascii'))
+            # Read response including next prompt
+            output = tn.read_until(b"(raspberrypi3) ", timeout=5).decode('ascii')
+            # Combine command echo and response
+            full_output = f"(raspberrypi3) {command}\n{output}"
+            print(f"🔌 Renode terminal '{command}' → {full_output.strip()}")
+            return full_output
+    except ConnectionRefusedError as e:
+        print(f"❌ Telnet connection refused: {e}. Is Renode running on port 4321?")
+        return f"Error: Connection refused. Ensure Renode is running on port 4321.\n(raspberrypi3) "
+    except Exception as e:
+        print(f"❌ Telnet terminal error: {e}")
+        return f"Error: {str(e)}\n(raspberrypi3) "
 
 def debug_load_state():
     try:
@@ -82,7 +103,7 @@ def debug_load_state():
 def index():
     load_thresholds()
     # with thread_lock:
-    new_state = debug_load_state()  # Log ici
+    new_state = debug_load_state()
     # print(new_state)
     if new_state:
         for k, v in new_state.items():
@@ -94,6 +115,10 @@ def index():
     save_state_with_thresholds()
     # print(f"🌐 Rendering index: state={state}, thresholds={thresholds}")
     return render_template('index.html', state=state, thresholds=thresholds)
+
+@app.route('/terminal')
+def terminal():
+    return render_template('terminal.html')
 
 @app.route('/api/set_threshold', methods=['POST'])
 def set_threshold():
@@ -133,6 +158,16 @@ def handle_get_state():
     emit('state_update', state)
     print("✅ 'state_update' emitted!")
 
+@socketio.on('terminal_command', namespace='/terminal')
+def handle_terminal_command(data):
+    command = data.get('command', '').strip()
+    if not command:
+        emit('terminal_output', '(raspberrypi3) ', namespace='/terminal')
+        return
+    output = renode_terminal_command(command)
+    print(f"📤 Emitting 'terminal_output': {output.strip()}")
+    emit('terminal_output', output, namespace='/terminal')
+
 if __name__ == '__main__':
     load_thresholds()
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)  # Enable debug for more logs
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

@@ -1,0 +1,70 @@
+/* Mode sombre global */
+body {
+  background-color: #121212;
+  color: #e0e0e0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scrolling */
+}
+
+/* Navigation Bar */
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #1e1e1e;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.nav-button {
+  background: #333;
+  color: #e0e0e0;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.nav-button:hover {
+  background: #00bcd4;
+}
+
+.nav-button.active {
+  background: #00bcd4;
+  color: #fff;
+}
+
+/* Terminal Container */
+.terminal-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 60px auto 0; /* Offset for nav bar */
+  height: calc(100vh - 60px); /* Fit within viewport */
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.terminal-container h1 {
+  text-align: center;
+  color: #00bcd4;
+  margin: 0 0 15px;
+  font-size: 1.5rem;
+}
+
+/* Terminal */
+#terminal {
+  flex-grow: 1;
+  background: #000;
+  border-radius: 8px;
+  padding: 10px;
+}
