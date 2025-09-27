@@ -70,24 +70,35 @@ def renode_command(command):
         return None
 
 def renode_terminal_command(command):
-    try:
-        with telnetlib.Telnet("localhost", 4321, timeout=5) as tn:  # Use port 4321
-            # Read initial prompt
-            initial = tn.read_until(b"(raspberrypi3) ", timeout=5).decode('ascii')
-            # Send command
-            tn.write((command + "\n").encode('ascii'))
-            # Read response including next prompt
-            output = tn.read_until(b"(raspberrypi3) ", timeout=5).decode('ascii')
-            # Combine command echo and response
-            full_output = f"(raspberrypi3) {command}\n{output}"
-            print(f"🔌 Renode terminal '{command}' → {full_output.strip()}")
-            return full_output
-    except ConnectionRefusedError as e:
-        print(f"❌ Telnet connection refused: {e}. Is Renode running on port 4321?")
-        return f"Error: Connection refused. Ensure Renode is running on port 4321.\n(raspberrypi3) "
-    except Exception as e:
-        print(f"❌ Telnet terminal error: {e}")
-        return f"Error: {str(e)}\n(raspberrypi3) "
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with telnetlib.Telnet("localhost", 4322, timeout=10) as tn: 
+                tn.read_until(b"(raspberrypi3)", timeout=10)
+                tn.read_very_eager() 
+                tn.write((command + "\n").encode('ascii'))
+                output = tn.read_until(b"(raspberrypi3)", timeout=10).decode('ascii').strip()
+                full_output = f"(raspberrypi3) {command}\n{output}\n\n(raspberrypi3) "
+                print(f"🔌 Renode terminal '{command}' → {full_output.strip()}")
+                return full_output
+        except ConnectionRefusedError as e:
+            print(f"❌ Telnet connection refused on attempt {attempt + 1}: {e}. Retrying...")
+            time.sleep(1) 
+        except Exception as e:
+            print(f"❌ Telnet terminal error on attempt {attempt + 1}: {e}")
+            time.sleep(1)
+    return f"Error: Failed after {max_retries} attempts. Ensure Renode is running on port 4321.\n(raspberrypi3) "
+
+@socketio.on('terminal_command', namespace='/terminal')
+def handle_terminal_command(data):
+    command = data.get('command', '').strip()
+    if not command:
+        emit('terminal_output', '(raspberrypi3) ', namespace='/terminal')
+        return
+    output = renode_terminal_command(command)
+    print(f"📤 Emitting 'terminal_output': {output.strip()}")
+    emit('terminal_output', output, namespace='/terminal')
+
 
 def debug_load_state():
     try:
@@ -157,16 +168,6 @@ def handle_get_state():
     print(f"📤 Emitting 'state_update': {state}")
     emit('state_update', state)
     print("✅ 'state_update' emitted!")
-
-@socketio.on('terminal_command', namespace='/terminal')
-def handle_terminal_command(data):
-    command = data.get('command', '').strip()
-    if not command:
-        emit('terminal_output', '(raspberrypi3) ', namespace='/terminal')
-        return
-    output = renode_terminal_command(command)
-    print(f"📤 Emitting 'terminal_output': {output.strip()}")
-    emit('terminal_output', output, namespace='/terminal')
 
 if __name__ == '__main__':
     load_thresholds()
